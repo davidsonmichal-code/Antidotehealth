@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Member Search Behavior Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f4f6f9;
+      color: #1a2332;
+      font-size: 14px;
+    }
+
+    /* HEADER */
+    .header {
+      background: #0f1f38;
+      color: white;
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header-left h1 {
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: -0.3px;
+    }
+    .header-left p {
+      font-size: 12px;
+      color: #8fa3bf;
+      margin-top: 3px;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .last-updated {
+      font-size: 12px;
+      color: #8fa3bf;
+    }
+    .alert-badge {
+      background: #e63946;
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 12px;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.75; }
+    }
+
+    /* FILTER BAR */
+    .filter-bar {
+      background: white;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 10px 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .filter-label {
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 500;
+    }
+    .filter-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 12px;
+      color: #334155;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .filter-chip:hover { background: #e2e8f0; }
+    .filter-chip select {
+      border: none;
+      background: transparent;
+      font-size: 12px;
+      color: #334155;
+      cursor: pointer;
+      outline: none;
+    }
+    .filter-divider {
+      width: 1px;
+      height: 20px;
+      background: #e2e8f0;
+    }
+
+    /* MAIN CONTENT */
+    .main {
+      padding: 24px 32px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* ON-SCREEN ALERT BANNER */
+    .alert-banner {
+      background: linear-gradient(135deg, #fff5f5, #fff);
+      border: 1.5px solid #e63946;
+      border-radius: 10px;
+      padding: 14px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .alert-banner-icon {
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .alert-banner-text strong {
+      color: #e63946;
+      font-size: 13px;
+    }
+    .alert-banner-text p {
+      color: #64748b;
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    /* SECTION LABEL */
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: #94a3b8;
+      margin-bottom: 12px;
+    }
+
+    /* INSIGHTS PANEL */
+    .insights-panel {
+      margin-bottom: 28px;
+    }
+    .insights-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .insights-panel-header h2 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #0f1f38;
+    }
+    .insights-panel-header span {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+    .insights-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .insight-card {
+      background: white;
+      border-radius: 10px;
+      padding: 18px;
+      border-left: 4px solid #ccc;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      position: relative;
+    }
+    .insight-card.data-quality { border-left-color: #f59e0b; }
+    .insight-card.network-gap { border-left-color: #e63946; }
+    .insight-card.ux-issue { border-left-color: #6366f1; }
+
+    .root-cause-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+    .badge-data-quality { background: #fef3c7; color: #92400e; }
+    .badge-network-gap { background: #fee2e2; color: #991b1b; }
+    .badge-ux-issue { background: #ede9fe; color: #4c1d95; }
+
+    .insight-card h3 {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #0f1f38;
+    }
+    .insight-card p {
+      font-size: 13px;
+      color: #475569;
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+    .insight-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .owner-tag {
+      font-size: 11px;
+      color: #64748b;
+      background: #f1f5f9;
+      padding: 3px 8px;
+      border-radius: 5px;
+    }
+    .drill-down-link {
+      font-size: 11px;
+      color: #3b82f6;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .drill-down-link:hover { color: #1d4ed8; }
+
+    /* KPI ROW */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .kpi-card {
+      background: white;
+      border-radius: 10px;
+      padding: 18px 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .kpi-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    .kpi-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #0f1f38;
+      line-height: 1;
+    }
+    .kpi-delta {
+      font-size: 12px;
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .delta-up-bad { color: #e63946; }
+    .delta-down-good { color: #10b981; }
+    .delta-up-good { color: #10b981; }
+    .delta-neutral { color: #94a3b8; }
+    .kpi-card.alert-kpi { border-top: 3px solid #e63946; }
+    .kpi-card.warn-kpi { border-top: 3px solid #f59e0b; }
+    .kpi-card.good-kpi { border-top: 3px solid #10b981; }
+
+    /* CHARTS GRID */
+    .charts-row {
+      display: grid;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .charts-row-2 { grid-template-columns: 1fr 1fr; }
+    .charts-row-3 { grid-template-columns: 2fr 1fr; }
+
+    .chart-card {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .chart-card h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0f1f38;
+      margin-bottom: 4px;
+    }
+    .chart-card .chart-subtitle {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-bottom: 16px;
+    }
+    .chart-wrapper {
+      position: relative;
+    }
+
+    /* FUNNEL */
+    .funnel {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 8px 0;
+    }
+    .funnel-step {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .funnel-label {
+      font-size: 12px;
+      color: #64748b;
+      width: 140px;
+      flex-shrink: 0;
+    }
+    .funnel-bar-wrap {
+      flex: 1;
+      background: #f1f5f9;
+      border-radius: 4px;
+      height: 28px;
+      overflow: hidden;
+    }
+    .funnel-bar {
+      height: 100%;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      padding-left: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: white;
+      transition: width 0.6s ease;
+    }
+    .funnel-pct {
+      font-size: 12px;
+      color: #64748b;
+      width: 44px;
+      text-align: right;
+    }
+
+    /* PROVIDER TABLE */
+    .provider-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .provider-table th {
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 8px 10px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .provider-table td {
+      padding: 10px 10px;
+      border-bottom: 1px solid #f8fafc;
+      color: #334155;
+    }
+    .provider-table tr:last-child td { border-bottom: none; }
+    .provider-table tr:hover td { background: #f8fafc; }
+    .conversion-bar-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .conversion-bar {
+      height: 6px;
+      border-radius: 3px;
+      background: #10b981;
+    }
+    .conversion-bar.low { background: #e63946; }
+    .conversion-bar.mid { background: #f59e0b; }
+    .flag {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 8px;
+      font-weight: 600;
+    }
+    .flag-pnms { background: #fef3c7; color: #92400e; }
+    .flag-ok { background: #d1fae5; color: #065f46; }
+
+    /* COHORT STAT */
+    .cohort-stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 120px;
+      border-radius: 8px;
+      background: #fff5f5;
+      border: 1px solid #fee2e2;
+      margin-bottom: 16px;
+    }
+    .cohort-number {
+      font-size: 42px;
+      font-weight: 800;
+      color: #e63946;
+    }
+    .cohort-label {
+      font-size: 12px;
+      color: #94a3b8;
+      text-align: center;
+      max-width: 160px;
+      margin-top: 4px;
+    }
+    .cohort-detail {
+      font-size: 12px;
+      color: #64748b;
+      line-height: 1.6;
+    }
+    .cohort-detail li {
+      margin-left: 16px;
+      margin-bottom: 4px;
+    }
+
+    /* ZERO RESULT LEGEND */
+    .donut-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+    }
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .legend-info {
+      flex: 1;
+      color: #334155;
+    }
+    .legend-owner {
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 1024px) {
+      .insights-grid { grid-template-columns: 1fr; }
+      .kpi-row { grid-template-columns: repeat(2, 1fr); }
+      .charts-row-2, .charts-row-3 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <h1>Member Search Behavior Dashboard</h1>
+    <p>Network operations intelligence - primary view: network operations lead</p>
+  </div>
+  <div class="header-right">
+    <span class="last-updated">Last updated: May 24, 2026 06:00 UTC</span>
+    <span class="alert-badge">2 Active Alerts</span>
+  </div>
+</div>
+
+<!-- FILTER BAR -->
+<div class="filter-bar">
+  <span class="filter-label">Filters:</span>
+  <div class="filter-chip">
+    <select><option>Last 7 days</option><option>Last 30 days</option><option>Last 90 days</option></select>
+  </div>
+  <div class="filter-chip">
+    <select><option>All Specialties</option><option>Cardiology</option><option>Dermatology</option><option>Mental Health</option><option>Primary Care</option></select>
+  </div>
+  <div class="filter-chip">
+    <select><option>All Geographies</option><option>Northeast</option><option>Southeast</option><option>Midwest</option><option>West</option></select>
+  </div>
+  <div class="filter-chip">
+    <select><option>All Plan Types</option><option>Individual</option><option>Family</option><option>Employer</option></select>
+  </div>
+  <div class="filter-divider"></div>
+  <div class="filter-chip">
+    <select><option>All Outcomes</option><option>Zero Result</option><option>Success</option><option>Abandoned</option></select>
+  </div>
+  <div class="filter-chip">
+    <select><option>In-Person + Virtual</option><option>In-Person Only</option><option>Virtual Only</option></select>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- ALERT BANNER -->
+  <div class="alert-banner">
+    <div class="alert-banner-icon">⚠️</div>
+    <div class="alert-banner-text">
+      <strong>Alert: Search success rate has declined for 2 consecutive weeks (68% - 62%)</strong>
+      <p>Sustained deterioration in members reaching a confirmed booking. Routed to Product + PNMS team via Slack and email.</p>
+    </div>
+  </div>
+
+  <!-- INSIGHTS PANEL -->
+  <div class="insights-panel">
+    <div class="insights-panel-header">
+      <h2>Automated Insights - Week of May 19, 2026</h2>
+      <span>Next refresh: May 26, 2026</span>
+    </div>
+    <div class="section-label">Top 3 Priority Findings</div>
+    <div class="insights-grid">
+
+      <div class="insight-card network-gap">
+        <div class="root-cause-badge badge-network-gap">🔴 Missing Network Support</div>
+        <h3>Cardiology zero-result rate up 18% in 3 counties</h3>
+        <p>No contracted cardiologists within serviceable range in Fulton County (GA), Maricopa County (AZ), and Harris County (TX). Telehealth substitution rate for this specialty is 8% - well below average, indicating members are not accepting virtual as an alternative.</p>
+        <div class="insight-footer">
+          <span class="owner-tag">Owner: Network Adequacy Team</span>
+          <span class="drill-down-link">View geography drill-down →</span>
+        </div>
+      </div>
+
+      <div class="insight-card data-quality">
+        <div class="root-cause-badge badge-data-quality">🟡 Data Quality</div>
+        <h3>Dermatology: highest search volume, 12% success rate</h3>
+        <p>Dermatology is the #2 most searched specialty this week. Accepting new patients field is unpopulated for 68% of dermatology providers in the PNMS master record, causing members to encounter results they cannot act on.</p>
+        <div class="insight-footer">
+          <span class="owner-tag">Owner: PNMS Data Team</span>
+          <span class="drill-down-link">View provider list →</span>
+        </div>
+      </div>
+
+      <div class="insight-card ux-issue">
+        <div class="root-cause-badge badge-ux-issue">🟣 UX Issue</div>
+        <h3>Mental health abandonment rising despite results returned</h3>
+        <p>Members applying the telehealth filter are removing it at a 41% rate before selecting a provider, up from 24% last month. Results are being returned - providers exist and records show as complete - but members are not converting. Filter label or availability display may be creating confusion.</p>
+        <div class="insight-footer">
+          <span class="owner-tag">Owner: Product and Design</span>
+          <span class="drill-down-link">View filter removal data →</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- KPI ROW -->
+  <div class="section-label" style="margin-bottom:12px;">Summary - Current vs Prior Period</div>
+  <div class="kpi-row" style="margin-bottom:28px;">
+    <div class="kpi-card good-kpi">
+      <div class="kpi-label">Search Volume</div>
+      <div class="kpi-value">14,820</div>
+      <div class="kpi-delta delta-up-good">▲ 6% vs prior week</div>
+    </div>
+    <div class="kpi-card alert-kpi">
+      <div class="kpi-label">Search Success Rate</div>
+      <div class="kpi-value">62%</div>
+      <div class="kpi-delta delta-up-bad">▼ 6pts vs prior week · 2nd consecutive decline</div>
+    </div>
+    <div class="kpi-card warn-kpi">
+      <div class="kpi-label">Zero-Result Rate</div>
+      <div class="kpi-value">18%</div>
+      <div class="kpi-delta delta-up-bad">▲ 3pts vs prior week</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Abandonment Rate</div>
+      <div class="kpi-value">20%</div>
+      <div class="kpi-delta delta-neutral">— flat vs prior week</div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 1: FUNNEL + ZERO RESULT DONUT -->
+  <div class="charts-row charts-row-2">
+
+    <div class="chart-card">
+      <h3>Search Funnel</h3>
+      <div class="chart-subtitle">Member journey from search to confirmed booking</div>
+      <div class="funnel">
+        <div class="funnel-step">
+          <span class="funnel-label">Searches initiated</span>
+          <div class="funnel-bar-wrap">
+            <div class="funnel-bar" style="width:100%; background:#3b82f6;">14,820</div>
+          </div>
+          <span class="funnel-pct">100%</span>
+        </div>
+        <div class="funnel-step">
+          <span class="funnel-label">Results returned</span>
+          <div class="funnel-bar-wrap">
+            <div class="funnel-bar" style="width:82%; background:#6366f1;">12,152</div>
+          </div>
+          <span class="funnel-pct">82%</span>
+        </div>
+        <div class="funnel-step">
+          <span class="funnel-label">Provider clicked</span>
+          <div class="funnel-bar-wrap">
+            <div class="funnel-bar" style="width:62%; background:#8b5cf6;">9,188</div>
+          </div>
+          <span class="funnel-pct">62%</span>
+        </div>
+        <div class="funnel-step">
+          <span class="funnel-label">Booking confirmed</span>
+          <div class="funnel-bar-wrap">
+            <div class="funnel-bar" style="width:38%; background:#10b981;">5,632</div>
+          </div>
+          <span class="funnel-pct">38%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <h3>Zero-Result Classification</h3>
+      <div class="chart-subtitle">2,668 zero-result events this week - classified by root cause</div>
+      <div style="display:flex; gap:20px; align-items:center; flex-wrap:wrap;">
+        <div style="width:180px; height:180px; flex-shrink:0;">
+          <canvas id="donutChart"></canvas>
+        </div>
+        <div class="donut-legend" style="flex:1; min-width:160px;">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#e63946;"></div>
+            <div>
+              <div class="legend-info"><strong>Geographic gap</strong> - 44%</div>
+              <div class="legend-owner">Owner: Network Adequacy</div>
+            </div>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#f59e0b;"></div>
+            <div>
+              <div class="legend-info"><strong>Specialty not in network</strong> - 31%</div>
+              <div class="legend-owner">Owner: Business Development</div>
+            </div>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#6366f1;"></div>
+            <div>
+              <div class="legend-info"><strong>Data quality failure</strong> - 25%</div>
+              <div class="legend-owner">Owner: PNMS Data Team</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CHARTS ROW 2: SPECIALTY PERFORMANCE + VIRTUAL TREND -->
+  <div class="charts-row charts-row-2" style="margin-top:16px;">
+
+    <div class="chart-card">
+      <h3>Specialty Performance</h3>
+      <div class="chart-subtitle">Search volume with success rate overlay - week of May 19</div>
+      <canvas id="specialtyChart" height="200"></canvas>
+    </div>
+
+    <div class="chart-card">
+      <h3>Virtual vs In-Person Trend</h3>
+      <div class="chart-subtitle">Monthly split with telehealth substitution rate</div>
+      <canvas id="virtualChart" height="200"></canvas>
+    </div>
+
+  </div>
+
+  <!-- CHARTS ROW 3: PROVIDER CONVERSION + COHORT -->
+  <div class="charts-row charts-row-3" style="margin-top:16px;">
+
+    <div class="chart-card">
+      <h3>Provider Conversion Table</h3>
+      <div class="chart-subtitle">High-traffic providers ranked by search-to-booking conversion - flagged cases cross-referenced against profile completeness</div>
+      <table class="provider-table">
+        <thead>
+          <tr>
+            <th>Provider</th>
+            <th>Specialty</th>
+            <th>Searches</th>
+            <th>Conversion</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Dr. Sarah M.</td>
+            <td>Primary Care</td>
+            <td>412</td>
+            <td>
+              <div class="conversion-bar-wrap">
+                <div class="conversion-bar" style="width:68px;"></div>
+                <span>68%</span>
+              </div>
+            </td>
+            <td><span class="flag flag-ok">Profile complete</span></td>
+          </tr>
+          <tr>
+            <td>Dr. James T.</td>
+            <td>Cardiology</td>
+            <td>387</td>
+            <td>
+              <div class="conversion-bar-wrap">
+                <div class="conversion-bar" style="width:54px;"></div>
+                <span>54%</span>
+              </div>
+            </td>
+            <td><span class="flag flag-ok">Profile complete</span></td>
+          </tr>
+          <tr>
+            <td>Dr. Priya K.</td>
+            <td>Dermatology</td>
+            <td>361</td>
+            <td>
+              <div class="conversion-bar-wrap">
+                <div class="conversion-bar low" style="width:8px;"></div>
+                <span>8%</span>
+              </div>
+            </td>
+            <td><span class="flag flag-pnms">PNMS review</span></td>
+          </tr>
+          <tr>
+            <td>Dr. Carlos R.</td>
+            <td>Mental Health</td>
+            <td>344</td>
+            <td>
+              <div class="conversion-bar-wrap">
+                <div class="conversion-bar mid" style="width:28px;"></div>
+                <span>28%</span>
+              </div>
+            </td>
+            <td><span class="flag flag-pnms">PNMS review</span></td>
+          </tr>
+          <tr>
+            <td>Dr. Aisha N.</td>
+            <td>Pediatrics</td>
+            <td>298</td>
+            <td>
+              <div class="conversion-bar-wrap">
+                <div class="conversion-bar" style="width:72px;"></div>
+                <span>72%</span>
+              </div>
+            </td>
+            <td><span class="flag flag-ok">Profile complete</span></td>
+          </tr>
+          <tr>
+            <td>Dr. Michael B.</td>
+            <td>Dermatology</td>
+            <td>276</td>
+            <td>
+              <div class="conversion-bar-wrap">
+                <div class="conversion-bar low" style="width:6px;"></div>
+                <span>6%</span>
+              </div>
+            </td>
+            <td><span class="flag flag-pnms">PNMS review</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="chart-card">
+      <h3>Repeated Unsuccessful Search Cohort</h3>
+      <div class="chart-subtitle">Members with 3+ searches, same specialty, no booking in 30 days</div>
+      <div class="cohort-stat">
+        <div class="cohort-number">847</div>
+        <div class="cohort-label">members at churn risk this month</div>
+      </div>
+      <ul class="cohort-detail">
+        <li>Top specialty: Mental Health (38%)</li>
+        <li>Top specialty: Dermatology (27%)</li>
+        <li>Top specialty: Cardiology (19%)</li>
+        <li>Avg searches before abandonment: 4.2</li>
+        <li>New vs returning: 61% returning members</li>
+      </ul>
+      <div style="margin-top:14px; padding-top:12px; border-top:1px solid #f1f5f9;">
+        <div style="font-size:11px; color:#94a3b8; margin-bottom:4px;">ROUTING</div>
+        <div style="font-size:12px; color:#64748b;">Cohort list sent to Retention Team via Slack and email - weekly cadence</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- DATA REFRESH NOTE -->
+  <div style="margin-top:24px; padding:14px 20px; background:white; border-radius:10px; border:1px solid #e2e8f0; display:flex; gap:32px; flex-wrap:wrap;">
+    <div>
+      <div style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Data Refresh</div>
+      <div style="font-size:12px; color:#475569;">Search events captured real-time - aggregated daily</div>
+    </div>
+    <div>
+      <div style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Alert Cadence</div>
+      <div style="font-size:12px; color:#475569;">Daily - failures caught within 24 hours</div>
+    </div>
+    <div>
+      <div style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Insights Panel</div>
+      <div style="font-size:12px; color:#475569;">Weekly refresh - every Monday</div>
+    </div>
+    <div>
+      <div style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Provider Records</div>
+      <div style="font-size:12px; color:#475569;">Per PNMS SLA - same-day critical fields</div>
+    </div>
+    <div>
+      <div style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Threshold Calibration</div>
+      <div style="font-size:12px; color:#475569;">First review scheduled: 60 days post-launch</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // DONUT CHART
+  new Chart(document.getElementById('donutChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Geographic gap', 'Specialty not in network', 'Data quality failure'],
+      datasets: [{
+        data: [44, 31, 25],
+        backgroundColor: ['#e63946', '#f59e0b', '#6366f1'],
+        borderWidth: 0,
+        hoverOffset: 6
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      cutout: '68%',
+      responsive: true,
+      maintainAspectRatio: true
+    }
+  });
+
+  // SPECIALTY CHART
+  new Chart(document.getElementById('specialtyChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Primary Care', 'Dermatology', 'Mental Health', 'Cardiology', 'Pediatrics', 'OB/GYN'],
+      datasets: [
+        {
+          label: 'Search Volume',
+          data: [3200, 2800, 2400, 1900, 1600, 1200],
+          backgroundColor: '#bfdbfe',
+          yAxisID: 'y',
+          borderRadius: 4,
+          order: 2
+        },
+        {
+          label: 'Success Rate %',
+          data: [74, 12, 38, 61, 71, 55],
+          type: 'line',
+          borderColor: '#3b82f6',
+          backgroundColor: 'transparent',
+          pointBackgroundColor: (ctx) => {
+            const v = ctx.dataset.data[ctx.dataIndex];
+            return v < 30 ? '#e63946' : v < 55 ? '#f59e0b' : '#10b981';
+          },
+          pointRadius: 5,
+          tension: 0.3,
+          yAxisID: 'y1',
+          order: 1
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+      scales: {
+        y: { beginAtZero: true, title: { display: true, text: 'Searches', font: { size: 11 } }, grid: { color: '#f1f5f9' } },
+        y1: { beginAtZero: true, max: 100, position: 'right', title: { display: true, text: 'Success %', font: { size: 11 } }, grid: { drawOnChartArea: false } }
+      }
+    }
+  });
+
+  // VIRTUAL TREND CHART
+  new Chart(document.getElementById('virtualChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+      datasets: [
+        {
+          label: 'In-Person',
+          data: [58, 55, 52, 49, 46],
+          backgroundColor: '#bfdbfe',
+          borderRadius: 4,
+          stack: 'stack'
+        },
+        {
+          label: 'Virtual',
+          data: [42, 45, 48, 51, 54],
+          backgroundColor: '#6366f1',
+          borderRadius: 4,
+          stack: 'stack'
+        },
+        {
+          label: 'Telehealth Substitution %',
+          data: [18, 21, 24, 26, 29],
+          type: 'line',
+          borderColor: '#10b981',
+          backgroundColor: 'transparent',
+          pointBackgroundColor: '#10b981',
+          pointRadius: 4,
+          tension: 0.4,
+          yAxisID: 'y1'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+      scales: {
+        y: { beginAtZero: true, max: 100, title: { display: true, text: '% of Searches', font: { size: 11 } }, grid: { color: '#f1f5f9' } },
+        y1: { beginAtZero: true, max: 60, position: 'right', title: { display: true, text: 'Substitution %', font: { size: 11 } }, grid: { drawOnChartArea: false } }
+      }
+    }
+  });
+</script>
+
+</body>
+</html>
