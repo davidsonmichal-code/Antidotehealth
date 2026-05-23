@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -471,7 +471,7 @@
 <div class="filter-bar">
   <span class="filter-label">Filters:</span>
   <div class="filter-chip">
-    <select><option>Last 7 days</option><option>Last 30 days</option><option>Last 90 days</option></select>
+    <select><option>Last 7 days</option><option>Last 30 days</option><option>Last 90 days</option><option>Last 12 months</option></select>
   </div>
   <div class="filter-chip">
     <select><option>All Specialties</option><option>Cardiology</option><option>Dermatology</option><option>Mental Health</option><option>Primary Care</option></select>
@@ -488,6 +488,19 @@
   </div>
   <div class="filter-chip">
     <select><option>In-Person + Virtual</option><option>In-Person Only</option><option>Virtual Only</option></select>
+  </div>
+  <div class="filter-divider"></div>
+  <div class="filter-chip" style="gap:6px; padding: 5px 10px;">
+    <span style="color:#94a3b8; font-size:12px;">🔍</span>
+    <input type="text" placeholder="Name or NPI..." style="border:none; background:transparent; font-size:12px; color:#334155; outline:none; width:130px;" list="provider-list" />
+    <datalist id="provider-list">
+      <option value="Dr. Sarah M." />
+      <option value="Dr. James T." />
+      <option value="Dr. Priya K." />
+      <option value="Dr. Carlos R." />
+      <option value="Dr. Aisha N." />
+      <option value="Dr. Michael B." />
+    </datalist>
   </div>
 </div>
 
@@ -653,7 +666,7 @@
 
     <div class="chart-card">
       <h3>Virtual vs In-Person Trend</h3>
-      <div class="chart-subtitle">Monthly split with telehealth substitution rate</div>
+      <div class="chart-subtitle">12-month split with telehealth substitution rate (Jun 2025 - May 2026)</div>
       <canvas id="virtualChart" height="200"></canvas>
     </div>
 
@@ -866,25 +879,25 @@
   new Chart(document.getElementById('virtualChart'), {
     type: 'bar',
     data: {
-      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+      labels: ['Jun 25', 'Jul 25', 'Aug 25', 'Sep 25', 'Oct 25', 'Nov 25', 'Dec 25', 'Jan 26', 'Feb 26', 'Mar 26', 'Apr 26', 'May 26'],
       datasets: [
         {
           label: 'In-Person',
-          data: [58, 55, 52, 49, 46],
+          data: [65, 64, 63, 62, 60, 58, 57, 58, 55, 52, 49, 46],
           backgroundColor: '#bfdbfe',
           borderRadius: 4,
           stack: 'stack'
         },
         {
           label: 'Virtual',
-          data: [42, 45, 48, 51, 54],
+          data: [35, 36, 37, 38, 40, 42, 43, 42, 45, 48, 51, 54],
           backgroundColor: '#6366f1',
           borderRadius: 4,
           stack: 'stack'
         },
         {
           label: 'Telehealth Substitution %',
-          data: [18, 21, 24, 26, 29],
+          data: [14, 15, 15, 16, 18, 22, 24, 21, 22, 24, 26, 29],
           type: 'line',
           borderColor: '#10b981',
           backgroundColor: 'transparent',
