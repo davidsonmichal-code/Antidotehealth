@@ -898,6 +898,33 @@ const SPECIALTY_CHART_ALL = {
   success: [74,   12,   38,   61,   71,   55]
 };
 
+// Per-specialty KPI values (rates) + share of total volume
+// These drive KPI cards and funnel when a specialty filter is active
+const SPECIALTY_STATS = {
+  "Cardiology":    { share: 0.128, success: 61, zero: 28, abandon: 11,
+    note: "Network gap in 3 counties driving elevated zero-result rate" },
+  "Dermatology":   { share: 0.189, success: 12, zero: 35, abandon: 53,
+    note: "Accepting-new-patients field missing for 68% of providers" },
+  "Mental Health": { share: 0.162, success: 38, zero: 22, abandon: 31,
+    note: "Results returned but members removing telehealth filter at 41%" },
+  "Primary Care":  { share: 0.216, success: 74, zero:  8, abandon: 18,
+    note: "Performing well - use as benchmark for other specialties" },
+  "Pediatrics":    { share: 0.108, success: 71, zero: 11, abandon: 18,
+    note: "Healthy funnel - profile completeness above average" },
+  "OB/GYN":        { share: 0.081, success: 55, zero: 16, abandon: 29,
+    note: "Mid-range - moderate zero-result and abandonment" },
+};
+
+// Per-specialty funnel drop-off shape - reflects root cause story
+const SPECIALTY_FUNNEL = {
+  "Cardiology":    [100, 72, 65, 61],   // drops early at results = network gap
+  "Dermatology":   [100, 65, 28, 12],   // double drop = data quality (can't act on results)
+  "Mental Health": [100, 78, 55, 38],   // drops at click/book = UX issue
+  "Primary Care":  [100, 92, 82, 74],   // healthy throughout
+  "Pediatrics":    [100, 89, 80, 71],   // healthy
+  "OB/GYN":        [100, 84, 71, 55],   // moderate
+};
+
 // Active filter state
 const filters = {
   date:     "Last 7 days",
@@ -1019,40 +1046,81 @@ new Chart(document.getElementById('virtualChart'), {
 // ============================================================
 
 function renderKPIs() {
-  const d = DATE_DATA[filters.date];
-  document.getElementById('kpi-volume').innerHTML  = d.volume;
-  document.getElementById('kpi-volume-delta').innerHTML  = d.volDelta;
-  document.getElementById('kpi-volume-delta').className  = 'kpi-delta ' + d.volClass;
+  const d   = DATE_DATA[filters.date];
+  const sel = filters.specialty;
 
-  document.getElementById('kpi-success').innerHTML = d.success;
-  document.getElementById('kpi-success-delta').innerHTML = d.sucDelta;
-  document.getElementById('kpi-success-delta').className = 'kpi-delta ' + d.sucClass;
+  if (sel === "All Specialties") {
+    // Full network view
+    document.getElementById('kpi-volume').innerHTML         = d.volume;
+    document.getElementById('kpi-volume-delta').innerHTML   = d.volDelta;
+    document.getElementById('kpi-volume-delta').className   = 'kpi-delta ' + d.volClass;
 
-  document.getElementById('kpi-zero').innerHTML    = d.zero;
-  document.getElementById('kpi-zero-delta').innerHTML    = d.zerDelta;
-  document.getElementById('kpi-zero-delta').className    = 'kpi-delta ' + d.zerClass;
+    document.getElementById('kpi-success').innerHTML        = d.success;
+    document.getElementById('kpi-success-delta').innerHTML  = d.sucDelta;
+    document.getElementById('kpi-success-delta').className  = 'kpi-delta ' + d.sucClass;
 
-  document.getElementById('kpi-abandon').innerHTML = d.abandon;
-  document.getElementById('kpi-abandon-delta').innerHTML = d.abanDelta;
-  document.getElementById('kpi-abandon-delta').className = 'kpi-delta ' + d.abanClass;
+    document.getElementById('kpi-zero').innerHTML           = d.zero;
+    document.getElementById('kpi-zero-delta').innerHTML     = d.zerDelta;
+    document.getElementById('kpi-zero-delta').className     = 'kpi-delta ' + d.zerClass;
+
+    document.getElementById('kpi-abandon').innerHTML        = d.abandon;
+    document.getElementById('kpi-abandon-delta').innerHTML  = d.abanDelta;
+    document.getElementById('kpi-abandon-delta').className  = 'kpi-delta ' + d.abanClass;
+  } else {
+    // Specialty-specific view
+    const sp      = SPECIALTY_STATS[sel];
+    const baseVol = parseInt(d.funnelTotal);
+    const specVol = Math.round(baseVol * sp.share).toLocaleString();
+
+    document.getElementById('kpi-volume').innerHTML         = specVol;
+    document.getElementById('kpi-volume-delta').innerHTML   = sel + ' &middot; ' + d.volDelta.replace(/&#9650; |&#9660; /, '');
+    document.getElementById('kpi-volume-delta').className   = 'kpi-delta delta-neutral';
+
+    document.getElementById('kpi-success').innerHTML        = sp.success + '%';
+    const sucClass = sp.success >= 65 ? 'delta-down-good' : sp.success >= 45 ? 'delta-neutral' : 'delta-up-bad';
+    const sucVsAvg = sp.success >= 65 ? '&#9650; above avg (62%)' : sp.success >= 45 ? '&#8212; near avg (62%)' : '&#9660; below avg (62%)';
+    document.getElementById('kpi-success-delta').innerHTML  = sucVsAvg;
+    document.getElementById('kpi-success-delta').className  = 'kpi-delta ' + sucClass;
+
+    document.getElementById('kpi-zero').innerHTML           = sp.zero + '%';
+    const zerClass = sp.zero >= 25 ? 'delta-up-bad' : sp.zero <= 12 ? 'delta-down-good' : 'delta-neutral';
+    const zerVsAvg = sp.zero >= 25 ? '&#9650; above avg (18%)' : sp.zero <= 12 ? '&#9660; below avg (18%)' : '&#8212; near avg (18%)';
+    document.getElementById('kpi-zero-delta').innerHTML     = zerVsAvg;
+    document.getElementById('kpi-zero-delta').className     = 'kpi-delta ' + zerClass;
+
+    document.getElementById('kpi-abandon').innerHTML        = sp.abandon + '%';
+    const abanClass = sp.abandon >= 35 ? 'delta-up-bad' : sp.abandon <= 15 ? 'delta-down-good' : 'delta-neutral';
+    const abanVsAvg = sp.abandon >= 35 ? '&#9650; above avg (20%)' : sp.abandon <= 15 ? '&#9660; below avg (20%)' : '&#8212; near avg (20%)';
+    document.getElementById('kpi-abandon-delta').innerHTML  = abanVsAvg;
+    document.getElementById('kpi-abandon-delta').className  = 'kpi-delta ' + abanClass;
+  }
 }
 
 function renderFunnel() {
-  const d = DATE_DATA[filters.date];
-  const total = d.funnelTotal;
-  const pcts  = d.funnelPct;
+  const d      = DATE_DATA[filters.date];
+  const sel    = filters.specialty;
   const colors = ['#3b82f6', '#6366f1', '#8b5cf6', '#10b981'];
   const ids    = ['funnel-searches', 'funnel-results', 'funnel-clicked', 'funnel-booked'];
+
+  let total, pcts;
+  if (sel === "All Specialties") {
+    total = d.funnelTotal;
+    pcts  = d.funnelPct;
+  } else {
+    const sp = SPECIALTY_STATS[sel];
+    total    = Math.round(d.funnelTotal * sp.share);
+    pcts     = SPECIALTY_FUNNEL[sel];
+  }
 
   ids.forEach((id, i) => {
     const el  = document.getElementById(id);
     const bar = el.querySelector('.funnel-bar');
     const pct = el.querySelector('.funnel-pct');
     const count = Math.round(total * pcts[i] / 100);
-    bar.style.width = pcts[i] + '%';
+    bar.style.width      = pcts[i] + '%';
     bar.style.background = colors[i];
-    bar.textContent = count.toLocaleString();
-    pct.textContent = pcts[i] + '%';
+    bar.textContent      = count.toLocaleString();
+    pct.textContent      = pcts[i] + '%';
   });
 }
 
