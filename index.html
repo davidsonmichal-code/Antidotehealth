@@ -928,6 +928,111 @@ const SPECIALTY_FUNNEL = {
   "OB/GYN":        [100, 84, 71, 55],   // moderate
 };
 
+// Geography: volume share + rate adjustments (vs network average)
+const GEO_STATS = {
+  "Northeast": { share: 0.28, sAdj: -2, zAdj: +1, aAdj:  0 },
+  "Southeast": { share: 0.22, sAdj: -5, zAdj: +7, aAdj: +4 },
+  "Midwest":   { share: 0.25, sAdj: +1, zAdj: -1, aAdj: -1 },
+  "West":      { share: 0.25, sAdj: +4, zAdj: -4, aAdj: -2 },
+};
+
+// Plan type: volume share + rate adjustments
+const PLAN_STATS = {
+  "Individual": { share: 0.45, sAdj: -3, zAdj: +3, aAdj: +2 },
+  "Family":     { share: 0.35, sAdj: +1, zAdj: -1, aAdj: -1 },
+  "Employer":   { share: 0.20, sAdj: +6, zAdj: -5, aAdj: -3 },
+};
+
+// Modality: volume share + rate adjustments
+const MODALITY_STATS = {
+  "In-Person Only": { share: 0.52, sAdj: -9, zAdj: +6, aAdj: +2 },
+  "Virtual Only":   { share: 0.48, sAdj: +7, zAdj: -5, aAdj: -3 },
+};
+
+// Outcome: forces rates to specific values, restricts volume to that segment
+const OUTCOME_STATS = {
+  "Zero Result": { volFactor: 0.18, success: 0,   zero: 100, abandon: 0   },
+  "Success":     { volFactor: 0.62, success: 100,  zero: 0,   abandon: 0   },
+  "Abandoned":   { volFactor: 0.20, success: 0,   zero: 0,   abandon: 100 },
+};
+
+// Compute combined KPIs from all active filters
+function computeFiltered() {
+  var d   = DATE_DATA[filters.date];
+  var sel = filters.specialty;
+
+  // Start from base date-range values
+  var volShare = 1.0;
+  var success  = parseFloat(d.success);
+  var zero     = parseFloat(d.zero);
+  var abandon  = parseFloat(d.abandon);
+  var pcts     = d.funnelPct;
+
+  // Specialty
+  if (sel !== "All Specialties") {
+    var sp   = SPECIALTY_STATS[sel];
+    volShare *= sp.share;
+    success   = sp.success;
+    zero      = sp.zero;
+    abandon   = sp.abandon;
+    pcts      = SPECIALTY_FUNNEL[sel];
+  }
+
+  // Geography
+  if (filters.geo !== "All Geographies") {
+    var g    = GEO_STATS[filters.geo];
+    volShare *= g.share;
+    success  += g.sAdj;
+    zero     += g.zAdj;
+    abandon  += g.aAdj;
+  }
+
+  // Plan type
+  if (filters.plan !== "All Plan Types") {
+    var p    = PLAN_STATS[filters.plan];
+    volShare *= p.share;
+    success  += p.sAdj;
+    zero     += p.zAdj;
+    abandon  += p.aAdj;
+  }
+
+  // Modality
+  if (filters.modality !== "In-Person + Virtual") {
+    var m    = MODALITY_STATS[filters.modality];
+    volShare *= m.share;
+    success  += m.sAdj;
+    zero     += m.zAdj;
+    abandon  += m.aAdj;
+  }
+
+  // Clamp rates
+  success = Math.max(0, Math.min(100, Math.round(success)));
+  zero    = Math.max(0, Math.min(100, Math.round(zero)));
+  abandon = Math.max(0, Math.min(100, Math.round(abandon)));
+
+  var baseVol = d.funnelTotal;
+  var vol     = Math.round(baseVol * volShare);
+
+  // Outcome filter overrides rates and slices volume further
+  if (filters.outcome !== "All Outcomes") {
+    var o   = OUTCOME_STATS[filters.outcome];
+    vol     = Math.round(vol * o.volFactor);
+    success = o.success;
+    zero    = o.zero;
+    abandon = o.abandon;
+    // Funnel collapses to the outcome segment
+    if (filters.outcome === "Zero Result")
+      pcts = [100, 100, 0, 0];
+    else if (filters.outcome === "Success")
+      pcts = [100, 100, 100, 100];
+    else
+      pcts = [100, 100, 60, 0];
+  }
+
+  return { vol: vol, success: success, zero: zero, abandon: abandon,
+           volShare: volShare, pcts: pcts, baseVol: baseVol };
+}
+
 // Active filter state
 const filters = {
   date:     "Last 7 days",
@@ -1049,59 +1154,56 @@ new Chart(document.getElementById('virtualChart'), {
 // ============================================================
 
 function renderKPIs() {
-  const d   = DATE_DATA[filters.date];
-  const sel = filters.specialty;
+  var d   = DATE_DATA[filters.date];
+  var f   = computeFiltered();
+  var hasFilters = filters.specialty !== "All Specialties" ||
+                   filters.geo !== "All Geographies" ||
+                   filters.plan !== "All Plan Types" ||
+                   filters.modality !== "In-Person + Virtual" ||
+                   filters.outcome !== "All Outcomes";
 
-  if (sel === "All Specialties") {
-    setKPI('kpi-volume',  'kpi-volume-delta',  d.volume,  d.volDelta,  d.volClass);
-    setKPI('kpi-success', 'kpi-success-delta', d.success, d.sucDelta,  d.sucClass);
-    setKPI('kpi-zero',    'kpi-zero-delta',    d.zero,    d.zerDelta,  d.zerClass);
-    setKPI('kpi-abandon', 'kpi-abandon-delta', d.abandon, d.abanDelta, d.abanClass);
-  } else {
-    const sp  = SPECIALTY_STATS[sel];
-    const vol = Math.round(d.funnelTotal * sp.share).toLocaleString();
+  // Volume
+  setKPI('kpi-volume', 'kpi-volume-delta',
+    f.vol.toLocaleString(),
+    hasFilters ? 'filtered view · ' + d.volDelta : d.volDelta,
+    hasFilters ? 'delta-neutral' : d.volClass);
 
-    setKPI('kpi-volume', 'kpi-volume-delta', vol, sel + ' · filtered view', 'delta-neutral');
+  // Success rate
+  var sucCls = f.success >= 65 ? 'delta-up-good' : f.success >= 45 ? 'delta-neutral' : 'delta-up-bad';
+  var sucTxt = hasFilters
+    ? (f.success >= 65 ? '▲' : f.success >= 45 ? '—' : '▼') + ' vs 62% network avg'
+    : d.sucDelta;
+  setKPI('kpi-success', 'kpi-success-delta', f.success + '%', sucTxt, hasFilters ? sucCls : d.sucClass);
 
-    var sucCls = sp.success >= 65 ? 'delta-up-good' : sp.success >= 45 ? 'delta-neutral' : 'delta-up-bad';
-    var sucTxt = (sp.success >= 65 ? '▲' : sp.success >= 45 ? '—' : '▼') + ' vs 62% avg';
-    setKPI('kpi-success', 'kpi-success-delta', sp.success + '%', sucTxt, sucCls);
+  // Zero-result rate
+  var zerCls = f.zero >= 25 ? 'delta-up-bad' : f.zero <= 12 ? 'delta-down-good' : 'delta-neutral';
+  var zerTxt = hasFilters
+    ? (f.zero >= 25 ? '▲' : f.zero <= 12 ? '▼' : '—') + ' vs 18% network avg'
+    : d.zerDelta;
+  setKPI('kpi-zero', 'kpi-zero-delta', f.zero + '%', zerTxt, hasFilters ? zerCls : d.zerClass);
 
-    var zerCls = sp.zero >= 25 ? 'delta-up-bad' : sp.zero <= 12 ? 'delta-down-good' : 'delta-neutral';
-    var zerTxt = (sp.zero >= 25 ? '▲' : sp.zero <= 12 ? '▼' : '—') + ' vs 18% avg';
-    setKPI('kpi-zero', 'kpi-zero-delta', sp.zero + '%', zerTxt, zerCls);
-
-    var abanCls = sp.abandon >= 35 ? 'delta-up-bad' : sp.abandon <= 15 ? 'delta-down-good' : 'delta-neutral';
-    var abanTxt = (sp.abandon >= 35 ? '▲' : sp.abandon <= 15 ? '▼' : '—') + ' vs 20% avg';
-    setKPI('kpi-abandon', 'kpi-abandon-delta', sp.abandon + '%', abanTxt, abanCls);
-  }
+  // Abandonment rate
+  var abanCls = f.abandon >= 30 ? 'delta-up-bad' : f.abandon <= 15 ? 'delta-down-good' : 'delta-neutral';
+  var abanTxt = hasFilters
+    ? (f.abandon >= 30 ? '▲' : f.abandon <= 15 ? '▼' : '—') + ' vs 20% network avg'
+    : d.abanDelta;
+  setKPI('kpi-abandon', 'kpi-abandon-delta', f.abandon + '%', abanTxt, hasFilters ? abanCls : d.abanClass);
 }
 
 function renderFunnel() {
-  const d      = DATE_DATA[filters.date];
-  const sel    = filters.specialty;
-  const colors = ['#3b82f6', '#6366f1', '#8b5cf6', '#10b981'];
-  const ids    = ['funnel-searches', 'funnel-results', 'funnel-clicked', 'funnel-booked'];
-
-  var total, pcts;
-  if (sel === "All Specialties") {
-    total = d.funnelTotal;
-    pcts  = d.funnelPct;
-  } else {
-    var sp = SPECIALTY_STATS[sel];
-    total  = Math.round(d.funnelTotal * sp.share);
-    pcts   = SPECIALTY_FUNNEL[sel];
-  }
+  var f      = computeFiltered();
+  var colors = ['#3b82f6', '#6366f1', '#8b5cf6', '#10b981'];
+  var ids    = ['funnel-searches', 'funnel-results', 'funnel-clicked', 'funnel-booked'];
 
   ids.forEach(function(id, i) {
     var step  = document.getElementById(id);
     var bar   = step.querySelector('.funnel-bar');
     var pctEl = step.querySelector('.funnel-pct');
-    var count = Math.round(total * pcts[i] / 100);
-    bar.style.width      = pcts[i] + '%';
+    var count = Math.round(f.vol * f.pcts[i] / 100);
+    bar.style.width      = f.pcts[i] + '%';
     bar.style.background = colors[i];
     bar.textContent      = count.toLocaleString();
-    pctEl.textContent    = pcts[i] + '%';
+    pctEl.textContent    = f.pcts[i] + '%';
   });
 }
 
