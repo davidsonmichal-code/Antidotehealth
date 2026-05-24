@@ -86,6 +86,10 @@
       transition: background 0.15s;
     }
     .filter-chip:hover { background: #e2e8f0; }
+    .filter-chip.active-filter {
+      background: #eff6ff;
+      border-color: #93c5fd;
+    }
     .filter-chip select {
       border: none;
       background: transparent;
@@ -99,6 +103,32 @@
       height: 20px;
       background: #e2e8f0;
     }
+
+    /* FILTER INDICATOR */
+    .filter-indicator {
+      display: none;
+      background: #eff6ff;
+      border-bottom: 1px solid #bfdbfe;
+      padding: 8px 32px;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+      color: #1e40af;
+    }
+    .filter-indicator-label { font-weight: 600; }
+    .filter-indicator-tags { flex: 1; }
+    .clear-filters-btn {
+      background: none;
+      border: 1px solid #3b82f6;
+      color: #3b82f6;
+      padding: 3px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+    .clear-filters-btn:hover { background: #dbeafe; }
 
     /* MAIN CONTENT */
     .main {
@@ -236,6 +266,7 @@
       border-radius: 10px;
       padding: 18px 20px;
       box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      transition: all 0.3s ease;
     }
     .kpi-label {
       font-size: 11px;
@@ -250,6 +281,7 @@
       font-weight: 700;
       color: #0f1f38;
       line-height: 1;
+      transition: all 0.2s ease;
     }
     .kpi-delta {
       font-size: 12px;
@@ -330,7 +362,8 @@
       font-size: 12px;
       font-weight: 600;
       color: white;
-      transition: width 0.6s ease;
+      transition: width 0.5s ease;
+      min-width: 60px;
     }
     .funnel-pct {
       font-size: 12px;
@@ -382,6 +415,7 @@
     }
     .flag-pnms { background: #fef3c7; color: #92400e; }
     .flag-ok { background: #d1fae5; color: #065f46; }
+    .npi-sub { font-size: 11px; color: #94a3b8; margin-top: 1px; }
 
     /* COHORT STAT */
     .cohort-stat {
@@ -470,45 +504,105 @@
 <!-- FILTER BAR -->
 <div class="filter-bar">
   <span class="filter-label">Filters:</span>
-  <div class="filter-chip">
-    <select><option>Last 7 days</option><option>Last 30 days</option><option>Last 90 days</option><option>Last 12 months</option></select>
+  <div class="filter-chip" id="chip-date">
+    <select id="sel-date">
+      <option>Last 7 days</option>
+      <option>Last 30 days</option>
+      <option>Last 90 days</option>
+      <option>Last 12 months</option>
+    </select>
   </div>
-  <div class="filter-chip">
-    <select><option>All Specialties</option><option>Cardiology</option><option>Dermatology</option><option>Mental Health</option><option>Primary Care</option></select>
+  <div class="filter-chip" id="chip-specialty">
+    <select id="sel-specialty">
+      <option>All Specialties</option>
+      <option>Cardiology</option>
+      <option>Dermatology</option>
+      <option>Mental Health</option>
+      <option>Primary Care</option>
+      <option>Pediatrics</option>
+      <option>OB/GYN</option>
+    </select>
   </div>
-  <div class="filter-chip">
-    <select><option>All Geographies</option><option>Northeast</option><option>Southeast</option><option>Midwest</option><option>West</option></select>
+  <div class="filter-chip" id="chip-geo">
+    <select id="sel-geo">
+      <option>All Geographies</option>
+      <option>Northeast</option>
+      <option>Southeast</option>
+      <option>Midwest</option>
+      <option>West</option>
+    </select>
   </div>
-  <div class="filter-chip">
-    <select><option>All Plan Types</option><option>Individual</option><option>Family</option><option>Employer</option></select>
+  <div class="filter-chip" id="chip-plan">
+    <select id="sel-plan">
+      <option>All Plan Types</option>
+      <option>Individual</option>
+      <option>Family</option>
+      <option>Employer</option>
+    </select>
   </div>
   <div class="filter-divider"></div>
-  <div class="filter-chip">
-    <select><option>All Outcomes</option><option>Zero Result</option><option>Success</option><option>Abandoned</option></select>
+  <div class="filter-chip" id="chip-outcome">
+    <select id="sel-outcome">
+      <option>All Outcomes</option>
+      <option>Zero Result</option>
+      <option>Success</option>
+      <option>Abandoned</option>
+    </select>
   </div>
-  <div class="filter-chip">
-    <select><option>In-Person + Virtual</option><option>In-Person Only</option><option>Virtual Only</option></select>
+  <div class="filter-chip" id="chip-modality">
+    <select id="sel-modality">
+      <option>In-Person + Virtual</option>
+      <option>In-Person Only</option>
+      <option>Virtual Only</option>
+    </select>
   </div>
   <div class="filter-divider"></div>
-  <div class="filter-chip" style="gap:6px; padding: 5px 10px;">
-    <span style="color:#94a3b8; font-size:12px;">🔍</span>
-    <input type="text" placeholder="Provider Name or NPI..." style="border:none; background:transparent; font-size:12px; color:#334155; outline:none; width:155px;" list="provider-list" />
+  <div class="filter-chip" id="chip-provider" style="gap:6px; padding: 5px 10px;">
+    <span style="color:#94a3b8; font-size:12px;">&#128269;</span>
+    <input id="provider-search" type="text" placeholder="Provider Name or NPI..."
+      style="border:none; background:transparent; font-size:12px; color:#334155; outline:none; width:165px;"
+      list="provider-list" autocomplete="off" />
     <datalist id="provider-list">
       <option value="Dr. Sarah M." />
+      <option value="1952873401" />
       <option value="Dr. James T." />
+      <option value="1073648295" />
       <option value="Dr. Priya K." />
+      <option value="1847563920" />
       <option value="Dr. Carlos R." />
+      <option value="1629374850" />
       <option value="Dr. Aisha N." />
+      <option value="1385720469" />
       <option value="Dr. Michael B." />
+      <option value="1746283950" />
+      <option value="Dr. Lisa M." />
+      <option value="1528394017" />
+      <option value="Dr. Robert C." />
+      <option value="1937264805" />
+      <option value="Dr. Emma W." />
+      <option value="1064738295" />
+      <option value="Dr. David L." />
+      <option value="1273849506" />
+      <option value="Dr. Sophia P." />
+      <option value="1849273650" />
+      <option value="Dr. Nathan F." />
+      <option value="1592034786" />
     </datalist>
   </div>
+</div>
+
+<!-- ACTIVE FILTER INDICATOR -->
+<div class="filter-indicator" id="filter-indicator">
+  <span class="filter-indicator-label">Active filters:</span>
+  <span class="filter-indicator-tags" id="filter-tags"></span>
+  <button class="clear-filters-btn" id="clear-filters">Clear all</button>
 </div>
 
 <div class="main">
 
   <!-- ALERT BANNER -->
   <div class="alert-banner">
-    <div class="alert-banner-icon">⚠️</div>
+    <div class="alert-banner-icon">&#9888;&#65039;</div>
     <div class="alert-banner-text">
       <strong>Alert: Search success rate has declined for 2 consecutive weeks (68% - 62%)</strong>
       <p>Sustained deterioration in members reaching a confirmed booking. Routed to Product + PNMS team via Slack and email.</p>
@@ -525,32 +619,32 @@
     <div class="insights-grid">
 
       <div class="insight-card network-gap">
-        <div class="root-cause-badge badge-network-gap">🔴 Missing Network Support</div>
+        <div class="root-cause-badge badge-network-gap">&#128308; Missing Network Support</div>
         <h3>Cardiology zero-result rate up 18% in 3 counties</h3>
         <p>No contracted cardiologists within serviceable range in Fulton County (GA), Maricopa County (AZ), and Harris County (TX). Telehealth substitution rate for this specialty is 8% - well below average, indicating members are not accepting virtual as an alternative.</p>
         <div class="insight-footer">
           <span class="owner-tag">Owner: Network Adequacy Team</span>
-          <span class="drill-down-link">View geography drill-down →</span>
+          <span class="drill-down-link">View geography drill-down &#8594;</span>
         </div>
       </div>
 
       <div class="insight-card data-quality">
-        <div class="root-cause-badge badge-data-quality">🟡 Data Quality</div>
+        <div class="root-cause-badge badge-data-quality">&#128993; Data Quality</div>
         <h3>Dermatology: highest search volume, 12% success rate</h3>
         <p>Dermatology is the #2 most searched specialty this week. Accepting new patients field is unpopulated for 68% of dermatology providers in the PNMS master record, causing members to encounter results they cannot act on.</p>
         <div class="insight-footer">
           <span class="owner-tag">Owner: PNMS Data Team</span>
-          <span class="drill-down-link">View provider list →</span>
+          <span class="drill-down-link">View provider list &#8594;</span>
         </div>
       </div>
 
       <div class="insight-card ux-issue">
-        <div class="root-cause-badge badge-ux-issue">🟣 UX Issue</div>
+        <div class="root-cause-badge badge-ux-issue">&#128994; UX Issue</div>
         <h3>Mental health abandonment rising despite results returned</h3>
         <p>Members applying the telehealth filter are removing it at a 41% rate before selecting a provider, up from 24% last month. Results are being returned - providers exist and records show as complete - but members are not converting. Filter label or availability display may be creating confusion.</p>
         <div class="insight-footer">
           <span class="owner-tag">Owner: Product and Design</span>
-          <span class="drill-down-link">View filter removal data →</span>
+          <span class="drill-down-link">View filter removal data &#8594;</span>
         </div>
       </div>
 
@@ -562,23 +656,23 @@
   <div class="kpi-row" style="margin-bottom:28px;">
     <div class="kpi-card good-kpi">
       <div class="kpi-label">Search Volume</div>
-      <div class="kpi-value">14,820</div>
-      <div class="kpi-delta delta-up-good">▲ 6% vs prior week</div>
+      <div class="kpi-value" id="kpi-volume">14,820</div>
+      <div class="kpi-delta delta-up-good" id="kpi-volume-delta">&#9650; 6% vs prior week</div>
     </div>
     <div class="kpi-card alert-kpi">
       <div class="kpi-label">Search Success Rate</div>
-      <div class="kpi-value">62%</div>
-      <div class="kpi-delta delta-up-bad">▼ 6pts vs prior week · 2nd consecutive decline</div>
+      <div class="kpi-value" id="kpi-success">62%</div>
+      <div class="kpi-delta delta-up-bad" id="kpi-success-delta">&#9660; 6pts vs prior week &middot; 2nd consecutive decline</div>
     </div>
     <div class="kpi-card warn-kpi">
       <div class="kpi-label">Zero-Result Rate</div>
-      <div class="kpi-value">18%</div>
-      <div class="kpi-delta delta-up-bad">▲ 3pts vs prior week</div>
+      <div class="kpi-value" id="kpi-zero">18%</div>
+      <div class="kpi-delta delta-up-bad" id="kpi-zero-delta">&#9650; 3pts vs prior week</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">Abandonment Rate</div>
-      <div class="kpi-value">20%</div>
-      <div class="kpi-delta delta-neutral">— flat vs prior week</div>
+      <div class="kpi-value" id="kpi-abandon">20%</div>
+      <div class="kpi-delta delta-neutral" id="kpi-abandon-delta">&#8212; flat vs prior week</div>
     </div>
   </div>
 
@@ -589,28 +683,28 @@
       <h3>Search Funnel</h3>
       <div class="chart-subtitle">Member journey from search to confirmed booking</div>
       <div class="funnel">
-        <div class="funnel-step">
+        <div class="funnel-step" id="funnel-searches">
           <span class="funnel-label">Searches initiated</span>
           <div class="funnel-bar-wrap">
             <div class="funnel-bar" style="width:100%; background:#3b82f6;">14,820</div>
           </div>
           <span class="funnel-pct">100%</span>
         </div>
-        <div class="funnel-step">
+        <div class="funnel-step" id="funnel-results">
           <span class="funnel-label">Results returned</span>
           <div class="funnel-bar-wrap">
             <div class="funnel-bar" style="width:82%; background:#6366f1;">12,152</div>
           </div>
           <span class="funnel-pct">82%</span>
         </div>
-        <div class="funnel-step">
+        <div class="funnel-step" id="funnel-clicked">
           <span class="funnel-label">Provider clicked</span>
           <div class="funnel-bar-wrap">
             <div class="funnel-bar" style="width:62%; background:#8b5cf6;">9,188</div>
           </div>
           <span class="funnel-pct">62%</span>
         </div>
-        <div class="funnel-step">
+        <div class="funnel-step" id="funnel-booked">
           <span class="funnel-label">Booking confirmed</span>
           <div class="funnel-bar-wrap">
             <div class="funnel-bar" style="width:38%; background:#10b981;">5,632</div>
@@ -622,7 +716,7 @@
 
     <div class="chart-card">
       <h3>Zero-Result Classification</h3>
-      <div class="chart-subtitle">2,668 zero-result events this week - classified by root cause</div>
+      <div class="chart-subtitle" id="donut-subtitle">2,668 zero-result events this week - classified by root cause</div>
       <div style="display:flex; gap:20px; align-items:center; flex-wrap:wrap;">
         <div style="width:180px; height:180px; flex-shrink:0;">
           <canvas id="donutChart"></canvas>
@@ -660,7 +754,7 @@
 
     <div class="chart-card">
       <h3>Specialty Performance</h3>
-      <div class="chart-subtitle">Search volume with success rate overlay - week of May 19</div>
+      <div class="chart-subtitle" id="specialty-subtitle">Search volume with success rate overlay - week of May 19</div>
       <canvas id="specialtyChart" height="200"></canvas>
     </div>
 
@@ -688,79 +782,8 @@
             <th>Status</th>
           </tr>
         </thead>
-        <tbody>
-          <tr>
-            <td>Dr. Sarah M.</td>
-            <td>Primary Care</td>
-            <td>412</td>
-            <td>
-              <div class="conversion-bar-wrap">
-                <div class="conversion-bar" style="width:68px;"></div>
-                <span>68%</span>
-              </div>
-            </td>
-            <td><span class="flag flag-ok">Profile complete</span></td>
-          </tr>
-          <tr>
-            <td>Dr. James T.</td>
-            <td>Cardiology</td>
-            <td>387</td>
-            <td>
-              <div class="conversion-bar-wrap">
-                <div class="conversion-bar" style="width:54px;"></div>
-                <span>54%</span>
-              </div>
-            </td>
-            <td><span class="flag flag-ok">Profile complete</span></td>
-          </tr>
-          <tr>
-            <td>Dr. Priya K.</td>
-            <td>Dermatology</td>
-            <td>361</td>
-            <td>
-              <div class="conversion-bar-wrap">
-                <div class="conversion-bar low" style="width:8px;"></div>
-                <span>8%</span>
-              </div>
-            </td>
-            <td><span class="flag flag-pnms">PNMS review</span></td>
-          </tr>
-          <tr>
-            <td>Dr. Carlos R.</td>
-            <td>Mental Health</td>
-            <td>344</td>
-            <td>
-              <div class="conversion-bar-wrap">
-                <div class="conversion-bar mid" style="width:28px;"></div>
-                <span>28%</span>
-              </div>
-            </td>
-            <td><span class="flag flag-pnms">PNMS review</span></td>
-          </tr>
-          <tr>
-            <td>Dr. Aisha N.</td>
-            <td>Pediatrics</td>
-            <td>298</td>
-            <td>
-              <div class="conversion-bar-wrap">
-                <div class="conversion-bar" style="width:72px;"></div>
-                <span>72%</span>
-              </div>
-            </td>
-            <td><span class="flag flag-ok">Profile complete</span></td>
-          </tr>
-          <tr>
-            <td>Dr. Michael B.</td>
-            <td>Dermatology</td>
-            <td>276</td>
-            <td>
-              <div class="conversion-bar-wrap">
-                <div class="conversion-bar low" style="width:6px;"></div>
-                <span>6%</span>
-              </div>
-            </td>
-            <td><span class="flag flag-pnms">PNMS review</span></td>
-          </tr>
+        <tbody id="providerTbody">
+          <!-- rendered by JS -->
         </tbody>
       </table>
     </div>
@@ -814,109 +837,381 @@
 </div>
 
 <script>
-  // DONUT CHART
-  new Chart(document.getElementById('donutChart'), {
-    type: 'doughnut',
-    data: {
-      labels: ['Geographic gap', 'Specialty not in network', 'Data quality failure'],
-      datasets: [{
-        data: [44, 31, 25],
-        backgroundColor: ['#e63946', '#f59e0b', '#6366f1'],
-        borderWidth: 0,
-        hoverOffset: 6
-      }]
-    },
-    options: {
-      plugins: { legend: { display: false } },
-      cutout: '68%',
-      responsive: true,
-      maintainAspectRatio: true
+// ============================================================
+// DATA MODEL
+// ============================================================
+
+const providers = [
+  { name: "Dr. Sarah M.",   npi: "1952873401", specialty: "Primary Care", searches: 412, conversion: 68, status: "ok" },
+  { name: "Dr. James T.",   npi: "1073648295", specialty: "Cardiology",   searches: 387, conversion: 54, status: "ok" },
+  { name: "Dr. Priya K.",   npi: "1847563920", specialty: "Dermatology",  searches: 361, conversion: 8,  status: "pnms" },
+  { name: "Dr. Carlos R.",  npi: "1629374850", specialty: "Mental Health", searches: 344, conversion: 28, status: "pnms" },
+  { name: "Dr. Aisha N.",   npi: "1385720469", specialty: "Pediatrics",   searches: 298, conversion: 72, status: "ok" },
+  { name: "Dr. Michael B.", npi: "1746283950", specialty: "Dermatology",  searches: 276, conversion: 6,  status: "pnms" },
+  { name: "Dr. Lisa M.",    npi: "1528394017", specialty: "Cardiology",   searches: 210, conversion: 49, status: "ok" },
+  { name: "Dr. Robert C.",  npi: "1937264805", specialty: "Mental Health", searches: 195, conversion: 15, status: "pnms" },
+  { name: "Dr. Emma W.",    npi: "1064738295", specialty: "Primary Care", searches: 188, conversion: 71, status: "ok" },
+  { name: "Dr. David L.",   npi: "1273849506", specialty: "OB/GYN",       searches: 176, conversion: 62, status: "ok" },
+  { name: "Dr. Sophia P.",  npi: "1849273650", specialty: "Pediatrics",   searches: 162, conversion: 67, status: "ok" },
+  { name: "Dr. Nathan F.",  npi: "1592034786", specialty: "Cardiology",   searches: 145, conversion: 31, status: "pnms" },
+];
+
+const DATE_DATA = {
+  "Last 7 days": {
+    volume: "14,820", volDelta: "&#9650; 6% vs prior week",           volClass: "delta-up-good",
+    success: "62%",   sucDelta: "&#9660; 6pts vs prior week &middot; 2nd consecutive decline", sucClass: "delta-up-bad",
+    zero:    "18%",   zerDelta: "&#9650; 3pts vs prior week",          zerClass: "delta-up-bad",
+    abandon: "20%",   abanDelta: "&#8212; flat vs prior week",         abanClass: "delta-neutral",
+    funnelTotal: 14820, funnelPct: [100, 82, 62, 38],
+    zeroCount: "2,668"
+  },
+  "Last 30 days": {
+    volume: "62,450", volDelta: "&#9650; 4% vs prior 30 days",        volClass: "delta-up-good",
+    success: "65%",   sucDelta: "&#9660; 3pts vs prior 30 days",      sucClass: "delta-up-bad",
+    zero:    "16%",   zerDelta: "&#9650; 1pt vs prior 30 days",       zerClass: "delta-up-bad",
+    abandon: "19%",   abanDelta: "&#9660; 1pt vs prior 30 days",      abanClass: "delta-down-good",
+    funnelTotal: 62450, funnelPct: [100, 84, 65, 41],
+    zeroCount: "9,992"
+  },
+  "Last 90 days": {
+    volume: "184,200", volDelta: "&#9650; 2% vs prior 90 days",       volClass: "delta-up-good",
+    success: "67%",    sucDelta: "&#9660; 1pt vs prior 90 days",      sucClass: "delta-up-bad",
+    zero:    "15%",    zerDelta: "&#8212; flat vs prior 90 days",      zerClass: "delta-neutral",
+    abandon: "18%",    abanDelta: "&#9660; 1pt vs prior 90 days",     abanClass: "delta-down-good",
+    funnelTotal: 184200, funnelPct: [100, 85, 67, 44],
+    zeroCount: "27,630"
+  },
+  "Last 12 months": {
+    volume: "748,600", volDelta: "&#9650; 11% vs prior year",         volClass: "delta-up-good",
+    success: "69%",    sucDelta: "&#9660; 4pts vs prior year",        sucClass: "delta-up-bad",
+    zero:    "14%",    zerDelta: "&#9650; 2pts vs prior year",        zerClass: "delta-up-bad",
+    abandon: "17%",    abanDelta: "&#9660; 2pts vs prior year",       abanClass: "delta-down-good",
+    funnelTotal: 748600, funnelPct: [100, 86, 69, 46],
+    zeroCount: "104,804"
+  }
+};
+
+// Specialty chart data per specialty selection
+const SPECIALTY_CHART_ALL = {
+  labels:  ['Primary Care', 'Dermatology', 'Mental Health', 'Cardiology', 'Pediatrics', 'OB/GYN'],
+  volume:  [3200, 2800, 2400, 1900, 1600, 1200],
+  success: [74,   12,   38,   61,   71,   55]
+};
+
+// Active filter state
+const filters = {
+  date:     "Last 7 days",
+  specialty: "All Specialties",
+  geo:       "All Geographies",
+  plan:      "All Plan Types",
+  outcome:   "All Outcomes",
+  modality:  "In-Person + Virtual",
+  search:    ""
+};
+
+// ============================================================
+// CHART INIT
+// ============================================================
+
+const donutChart = new Chart(document.getElementById('donutChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Geographic gap', 'Specialty not in network', 'Data quality failure'],
+    datasets: [{
+      data: [44, 31, 25],
+      backgroundColor: ['#e63946', '#f59e0b', '#6366f1'],
+      borderWidth: 0,
+      hoverOffset: 6
+    }]
+  },
+  options: {
+    plugins: { legend: { display: false } },
+    cutout: '68%',
+    responsive: true,
+    maintainAspectRatio: true
+  }
+});
+
+const specialtyChart = new Chart(document.getElementById('specialtyChart'), {
+  type: 'bar',
+  data: {
+    labels: [...SPECIALTY_CHART_ALL.labels],
+    datasets: [
+      {
+        label: 'Search Volume',
+        data: [...SPECIALTY_CHART_ALL.volume],
+        backgroundColor: '#bfdbfe',
+        yAxisID: 'y',
+        borderRadius: 4,
+        order: 2
+      },
+      {
+        label: 'Success Rate %',
+        data: [...SPECIALTY_CHART_ALL.success],
+        type: 'line',
+        borderColor: '#3b82f6',
+        backgroundColor: 'transparent',
+        pointBackgroundColor: (ctx) => {
+          const v = ctx.dataset.data[ctx.dataIndex];
+          return v < 30 ? '#e63946' : v < 55 ? '#f59e0b' : '#10b981';
+        },
+        pointRadius: 5,
+        tension: 0.3,
+        yAxisID: 'y1',
+        order: 1
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+    scales: {
+      y:  { beginAtZero: true, title: { display: true, text: 'Searches', font: { size: 11 } }, grid: { color: '#f1f5f9' } },
+      y1: { beginAtZero: true, max: 100, position: 'right', title: { display: true, text: 'Success %', font: { size: 11 } }, grid: { drawOnChartArea: false } }
     }
+  }
+});
+
+new Chart(document.getElementById('virtualChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Jun 25','Jul 25','Aug 25','Sep 25','Oct 25','Nov 25','Dec 25','Jan 26','Feb 26','Mar 26','Apr 26','May 26'],
+    datasets: [
+      {
+        label: 'In-Person',
+        data: [65, 64, 63, 62, 60, 58, 57, 58, 55, 52, 49, 46],
+        backgroundColor: '#bfdbfe',
+        borderRadius: 4,
+        stack: 'stack'
+      },
+      {
+        label: 'Virtual',
+        data: [35, 36, 37, 38, 40, 42, 43, 42, 45, 48, 51, 54],
+        backgroundColor: '#6366f1',
+        borderRadius: 4,
+        stack: 'stack'
+      },
+      {
+        label: 'Telehealth Substitution %',
+        data: [14, 15, 15, 16, 18, 22, 24, 21, 22, 24, 26, 29],
+        type: 'line',
+        borderColor: '#10b981',
+        backgroundColor: 'transparent',
+        pointBackgroundColor: '#10b981',
+        pointRadius: 4,
+        tension: 0.4,
+        yAxisID: 'y1'
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+    scales: {
+      y:  { beginAtZero: true, max: 100, title: { display: true, text: '% of Searches', font: { size: 11 } }, grid: { color: '#f1f5f9' } },
+      y1: { beginAtZero: true, max: 60, position: 'right', title: { display: true, text: 'Substitution %', font: { size: 11 } }, grid: { drawOnChartArea: false } }
+    }
+  }
+});
+
+// ============================================================
+// RENDER FUNCTIONS
+// ============================================================
+
+function renderKPIs() {
+  const d = DATE_DATA[filters.date];
+  document.getElementById('kpi-volume').innerHTML  = d.volume;
+  document.getElementById('kpi-volume-delta').innerHTML  = d.volDelta;
+  document.getElementById('kpi-volume-delta').className  = 'kpi-delta ' + d.volClass;
+
+  document.getElementById('kpi-success').innerHTML = d.success;
+  document.getElementById('kpi-success-delta').innerHTML = d.sucDelta;
+  document.getElementById('kpi-success-delta').className = 'kpi-delta ' + d.sucClass;
+
+  document.getElementById('kpi-zero').innerHTML    = d.zero;
+  document.getElementById('kpi-zero-delta').innerHTML    = d.zerDelta;
+  document.getElementById('kpi-zero-delta').className    = 'kpi-delta ' + d.zerClass;
+
+  document.getElementById('kpi-abandon').innerHTML = d.abandon;
+  document.getElementById('kpi-abandon-delta').innerHTML = d.abanDelta;
+  document.getElementById('kpi-abandon-delta').className = 'kpi-delta ' + d.abanClass;
+}
+
+function renderFunnel() {
+  const d = DATE_DATA[filters.date];
+  const total = d.funnelTotal;
+  const pcts  = d.funnelPct;
+  const colors = ['#3b82f6', '#6366f1', '#8b5cf6', '#10b981'];
+  const ids    = ['funnel-searches', 'funnel-results', 'funnel-clicked', 'funnel-booked'];
+
+  ids.forEach((id, i) => {
+    const el  = document.getElementById(id);
+    const bar = el.querySelector('.funnel-bar');
+    const pct = el.querySelector('.funnel-pct');
+    const count = Math.round(total * pcts[i] / 100);
+    bar.style.width = pcts[i] + '%';
+    bar.style.background = colors[i];
+    bar.textContent = count.toLocaleString();
+    pct.textContent = pcts[i] + '%';
+  });
+}
+
+function renderProviderTable() {
+  const search    = filters.search.toLowerCase();
+  const specialty = filters.specialty;
+
+  const filtered = providers.filter(p => {
+    const matchSearch    = !search ||
+      p.name.toLowerCase().includes(search) ||
+      p.npi.includes(search);
+    const matchSpecialty = specialty === "All Specialties" || p.specialty === specialty;
+    return matchSearch && matchSpecialty;
   });
 
-  // SPECIALTY CHART
-  new Chart(document.getElementById('specialtyChart'), {
-    type: 'bar',
-    data: {
-      labels: ['Primary Care', 'Dermatology', 'Mental Health', 'Cardiology', 'Pediatrics', 'OB/GYN'],
-      datasets: [
-        {
-          label: 'Search Volume',
-          data: [3200, 2800, 2400, 1900, 1600, 1200],
-          backgroundColor: '#bfdbfe',
-          yAxisID: 'y',
-          borderRadius: 4,
-          order: 2
-        },
-        {
-          label: 'Success Rate %',
-          data: [74, 12, 38, 61, 71, 55],
-          type: 'line',
-          borderColor: '#3b82f6',
-          backgroundColor: 'transparent',
-          pointBackgroundColor: (ctx) => {
-            const v = ctx.dataset.data[ctx.dataIndex];
-            return v < 30 ? '#e63946' : v < 55 ? '#f59e0b' : '#10b981';
-          },
-          pointRadius: 5,
-          tension: 0.3,
-          yAxisID: 'y1',
-          order: 1
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
-      scales: {
-        y: { beginAtZero: true, title: { display: true, text: 'Searches', font: { size: 11 } }, grid: { color: '#f1f5f9' } },
-        y1: { beginAtZero: true, max: 100, position: 'right', title: { display: true, text: 'Success %', font: { size: 11 } }, grid: { drawOnChartArea: false } }
-      }
-    }
-  });
+  const tbody = document.getElementById('providerTbody');
 
-  // VIRTUAL TREND CHART
-  new Chart(document.getElementById('virtualChart'), {
-    type: 'bar',
-    data: {
-      labels: ['Jun 25', 'Jul 25', 'Aug 25', 'Sep 25', 'Oct 25', 'Nov 25', 'Dec 25', 'Jan 26', 'Feb 26', 'Mar 26', 'Apr 26', 'May 26'],
-      datasets: [
-        {
-          label: 'In-Person',
-          data: [65, 64, 63, 62, 60, 58, 57, 58, 55, 52, 49, 46],
-          backgroundColor: '#bfdbfe',
-          borderRadius: 4,
-          stack: 'stack'
-        },
-        {
-          label: 'Virtual',
-          data: [35, 36, 37, 38, 40, 42, 43, 42, 45, 48, 51, 54],
-          backgroundColor: '#6366f1',
-          borderRadius: 4,
-          stack: 'stack'
-        },
-        {
-          label: 'Telehealth Substitution %',
-          data: [14, 15, 15, 16, 18, 22, 24, 21, 22, 24, 26, 29],
-          type: 'line',
-          borderColor: '#10b981',
-          backgroundColor: 'transparent',
-          pointBackgroundColor: '#10b981',
-          pointRadius: 4,
-          tension: 0.4,
-          yAxisID: 'y1'
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
-      scales: {
-        y: { beginAtZero: true, max: 100, title: { display: true, text: '% of Searches', font: { size: 11 } }, grid: { color: '#f1f5f9' } },
-        y1: { beginAtZero: true, max: 60, position: 'right', title: { display: true, text: 'Substitution %', font: { size: 11 } }, grid: { drawOnChartArea: false } }
-      }
-    }
-  });
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:#94a3b8;font-size:13px;">
+      No providers match the current filters</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(p => {
+    const barClass = p.conversion >= 50 ? '' : p.conversion >= 25 ? ' mid' : ' low';
+    const barWidth = Math.max(p.conversion, 3);
+    const flagClass = p.status === 'ok' ? 'flag-ok' : 'flag-pnms';
+    const flagLabel = p.status === 'ok' ? 'Profile complete' : 'PNMS review';
+    return `<tr>
+      <td>
+        <div style="font-weight:500">${p.name}</div>
+        <div class="npi-sub">NPI ${p.npi}</div>
+      </td>
+      <td>${p.specialty}</td>
+      <td>${p.searches.toLocaleString()}</td>
+      <td>
+        <div class="conversion-bar-wrap">
+          <div class="conversion-bar${barClass}" style="width:${barWidth}px;"></div>
+          <span>${p.conversion}%</span>
+        </div>
+      </td>
+      <td><span class="flag ${flagClass}">${flagLabel}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function updateSpecialtyChart() {
+  const sel = filters.specialty;
+  const allLabels = SPECIALTY_CHART_ALL.labels;
+
+  specialtyChart.data.labels = allLabels;
+  specialtyChart.data.datasets[0].data = [...SPECIALTY_CHART_ALL.volume];
+  specialtyChart.data.datasets[1].data = [...SPECIALTY_CHART_ALL.success];
+
+  if (sel === "All Specialties") {
+    specialtyChart.data.datasets[0].backgroundColor = '#bfdbfe';
+    document.getElementById('specialty-subtitle').textContent =
+      'Search volume with success rate overlay - week of May 19';
+  } else {
+    specialtyChart.data.datasets[0].backgroundColor = allLabels.map(l =>
+      l === sel ? '#3b82f6' : '#e2e8f0'
+    );
+    document.getElementById('specialty-subtitle').textContent =
+      sel + ' highlighted - all specialties shown for context';
+  }
+  specialtyChart.update();
+}
+
+function updateFilterIndicator() {
+  const active = [];
+  if (filters.specialty !== "All Specialties") active.push(filters.specialty);
+  if (filters.geo       !== "All Geographies")  active.push(filters.geo);
+  if (filters.plan      !== "All Plan Types")    active.push(filters.plan);
+  if (filters.outcome   !== "All Outcomes")      active.push(filters.outcome);
+  if (filters.modality  !== "In-Person + Virtual") active.push(filters.modality);
+  if (filters.search)                             active.push('"' + filters.search + '"');
+
+  const bar = document.getElementById('filter-indicator');
+  if (active.length > 0) {
+    bar.style.display = 'flex';
+    document.getElementById('filter-tags').textContent = active.join(' · ');
+  } else {
+    bar.style.display = 'none';
+  }
+
+  // Highlight active filter chips
+  document.getElementById('chip-specialty').classList.toggle('active-filter', filters.specialty !== "All Specialties");
+  document.getElementById('chip-geo').classList.toggle('active-filter',       filters.geo !== "All Geographies");
+  document.getElementById('chip-plan').classList.toggle('active-filter',      filters.plan !== "All Plan Types");
+  document.getElementById('chip-outcome').classList.toggle('active-filter',   filters.outcome !== "All Outcomes");
+  document.getElementById('chip-modality').classList.toggle('active-filter',  filters.modality !== "In-Person + Virtual");
+  document.getElementById('chip-provider').classList.toggle('active-filter',  !!filters.search);
+}
+
+function applyFilters() {
+  renderKPIs();
+  renderFunnel();
+  renderProviderTable();
+  updateSpecialtyChart();
+  updateFilterIndicator();
+}
+
+// ============================================================
+// EVENT LISTENERS
+// ============================================================
+
+document.getElementById('sel-date').addEventListener('change', function() {
+  filters.date = this.value;
+  applyFilters();
+});
+
+document.getElementById('sel-specialty').addEventListener('change', function() {
+  filters.specialty = this.value;
+  applyFilters();
+});
+
+document.getElementById('sel-geo').addEventListener('change', function() {
+  filters.geo = this.value;
+  applyFilters();
+});
+
+document.getElementById('sel-plan').addEventListener('change', function() {
+  filters.plan = this.value;
+  applyFilters();
+});
+
+document.getElementById('sel-outcome').addEventListener('change', function() {
+  filters.outcome = this.value;
+  applyFilters();
+});
+
+document.getElementById('sel-modality').addEventListener('change', function() {
+  filters.modality = this.value;
+  applyFilters();
+});
+
+document.getElementById('provider-search').addEventListener('input', function() {
+  filters.search = this.value.trim();
+  applyFilters();
+});
+
+document.getElementById('clear-filters').addEventListener('click', function() {
+  filters.specialty = "All Specialties";
+  filters.geo       = "All Geographies";
+  filters.plan      = "All Plan Types";
+  filters.outcome   = "All Outcomes";
+  filters.modality  = "In-Person + Virtual";
+  filters.search    = "";
+  document.getElementById('provider-search').value = '';
+  document.getElementById('sel-specialty').selectedIndex = 0;
+  document.getElementById('sel-geo').selectedIndex       = 0;
+  document.getElementById('sel-plan').selectedIndex      = 0;
+  document.getElementById('sel-outcome').selectedIndex   = 0;
+  document.getElementById('sel-modality').selectedIndex  = 0;
+  applyFilters();
+});
+
+// Initial render
+applyFilters();
 </script>
 
 </body>
