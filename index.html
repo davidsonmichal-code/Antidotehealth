@@ -505,7 +505,7 @@
 <div class="filter-bar">
   <span class="filter-label">Filters:</span>
   <div class="filter-chip" id="chip-date">
-    <select id="sel-date">
+    <select id="sel-date" onchange="filters.date=this.value; applyFilters();">
       <option>Last 7 days</option>
       <option>Last 30 days</option>
       <option>Last 90 days</option>
@@ -513,7 +513,7 @@
     </select>
   </div>
   <div class="filter-chip" id="chip-specialty">
-    <select id="sel-specialty">
+    <select id="sel-specialty" onchange="filters.specialty=this.value; applyFilters();">
       <option>All Specialties</option>
       <option>Cardiology</option>
       <option>Dermatology</option>
@@ -524,7 +524,7 @@
     </select>
   </div>
   <div class="filter-chip" id="chip-geo">
-    <select id="sel-geo">
+    <select id="sel-geo" onchange="filters.geo=this.value; applyFilters();">
       <option>All Geographies</option>
       <option>Northeast</option>
       <option>Southeast</option>
@@ -533,7 +533,7 @@
     </select>
   </div>
   <div class="filter-chip" id="chip-plan">
-    <select id="sel-plan">
+    <select id="sel-plan" onchange="filters.plan=this.value; applyFilters();">
       <option>All Plan Types</option>
       <option>Individual</option>
       <option>Family</option>
@@ -542,7 +542,7 @@
   </div>
   <div class="filter-divider"></div>
   <div class="filter-chip" id="chip-outcome">
-    <select id="sel-outcome">
+    <select id="sel-outcome" onchange="filters.outcome=this.value; applyFilters();">
       <option>All Outcomes</option>
       <option>Zero Result</option>
       <option>Success</option>
@@ -550,7 +550,7 @@
     </select>
   </div>
   <div class="filter-chip" id="chip-modality">
-    <select id="sel-modality">
+    <select id="sel-modality" onchange="filters.modality=this.value; applyFilters();">
       <option>In-Person + Virtual</option>
       <option>In-Person Only</option>
       <option>Virtual Only</option>
@@ -561,7 +561,8 @@
     <span style="color:#94a3b8; font-size:12px;">&#128269;</span>
     <input id="provider-search" type="text" placeholder="Provider Name or NPI..."
       style="border:none; background:transparent; font-size:12px; color:#334155; outline:none; width:165px;"
-      list="provider-list" autocomplete="off" />
+      list="provider-list" autocomplete="off"
+      oninput="filters.search=this.value.trim(); applyFilters();" />
     <datalist id="provider-list">
       <option value="Dr. Sarah M." />
       <option value="1952873401" />
