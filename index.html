@@ -837,9 +837,15 @@
 </div>
 
 <script>
-// ============================================================
-// DATA MODEL
-// ============================================================
+// ── helpers ──────────────────────────────────────────────────
+function el(id) { return document.getElementById(id); }
+function setKPI(valId, deltaId, value, delta, cls) {
+  el(valId).textContent  = value;
+  el(deltaId).textContent = delta;
+  el(deltaId).className   = 'kpi-delta ' + cls;
+}
+
+// ── DATA ─────────────────────────────────────────────────────
 
 const providers = [
   { name: "Dr. Sarah M.",   npi: "1952873401", specialty: "Primary Care", searches: 412, conversion: 68, status: "ok" },
@@ -858,36 +864,32 @@ const providers = [
 
 const DATE_DATA = {
   "Last 7 days": {
-    volume: "14,820", volDelta: "&#9650; 6% vs prior week",           volClass: "delta-up-good",
-    success: "62%",   sucDelta: "&#9660; 6pts vs prior week &middot; 2nd consecutive decline", sucClass: "delta-up-bad",
-    zero:    "18%",   zerDelta: "&#9650; 3pts vs prior week",          zerClass: "delta-up-bad",
-    abandon: "20%",   abanDelta: "&#8212; flat vs prior week",         abanClass: "delta-neutral",
-    funnelTotal: 14820, funnelPct: [100, 82, 62, 38],
-    zeroCount: "2,668"
+    volume: "14,820", volDelta: "▲ 6% vs prior week",                   volClass: "delta-up-good",
+    success: "62%",   sucDelta: "▼ 6pts vs prior week · 2nd decline", sucClass: "delta-up-bad",
+    zero:    "18%",   zerDelta: "▲ 3pts vs prior week",                  zerClass: "delta-up-bad",
+    abandon: "20%",   abanDelta: "— flat vs prior week",                 abanClass: "delta-neutral",
+    funnelTotal: 14820, funnelPct: [100, 82, 62, 38]
   },
   "Last 30 days": {
-    volume: "62,450", volDelta: "&#9650; 4% vs prior 30 days",        volClass: "delta-up-good",
-    success: "65%",   sucDelta: "&#9660; 3pts vs prior 30 days",      sucClass: "delta-up-bad",
-    zero:    "16%",   zerDelta: "&#9650; 1pt vs prior 30 days",       zerClass: "delta-up-bad",
-    abandon: "19%",   abanDelta: "&#9660; 1pt vs prior 30 days",      abanClass: "delta-down-good",
-    funnelTotal: 62450, funnelPct: [100, 84, 65, 41],
-    zeroCount: "9,992"
+    volume: "62,450", volDelta: "▲ 4% vs prior 30 days",  volClass: "delta-up-good",
+    success: "65%",   sucDelta: "▼ 3pts vs prior 30 days", sucClass: "delta-up-bad",
+    zero:    "16%",   zerDelta: "▲ 1pt vs prior 30 days",  zerClass: "delta-up-bad",
+    abandon: "19%",   abanDelta: "▼ 1pt vs prior 30 days", abanClass: "delta-down-good",
+    funnelTotal: 62450, funnelPct: [100, 84, 65, 41]
   },
   "Last 90 days": {
-    volume: "184,200", volDelta: "&#9650; 2% vs prior 90 days",       volClass: "delta-up-good",
-    success: "67%",    sucDelta: "&#9660; 1pt vs prior 90 days",      sucClass: "delta-up-bad",
-    zero:    "15%",    zerDelta: "&#8212; flat vs prior 90 days",      zerClass: "delta-neutral",
-    abandon: "18%",    abanDelta: "&#9660; 1pt vs prior 90 days",     abanClass: "delta-down-good",
-    funnelTotal: 184200, funnelPct: [100, 85, 67, 44],
-    zeroCount: "27,630"
+    volume: "184,200", volDelta: "▲ 2% vs prior 90 days",  volClass: "delta-up-good",
+    success: "67%",    sucDelta: "▼ 1pt vs prior 90 days",  sucClass: "delta-up-bad",
+    zero:    "15%",    zerDelta: "— flat vs prior 90 days",  zerClass: "delta-neutral",
+    abandon: "18%",    abanDelta: "▼ 1pt vs prior 90 days", abanClass: "delta-down-good",
+    funnelTotal: 184200, funnelPct: [100, 85, 67, 44]
   },
   "Last 12 months": {
-    volume: "748,600", volDelta: "&#9650; 11% vs prior year",         volClass: "delta-up-good",
-    success: "69%",    sucDelta: "&#9660; 4pts vs prior year",        sucClass: "delta-up-bad",
-    zero:    "14%",    zerDelta: "&#9650; 2pts vs prior year",        zerClass: "delta-up-bad",
-    abandon: "17%",    abanDelta: "&#9660; 2pts vs prior year",       abanClass: "delta-down-good",
-    funnelTotal: 748600, funnelPct: [100, 86, 69, 46],
-    zeroCount: "104,804"
+    volume: "748,600", volDelta: "▲ 11% vs prior year",  volClass: "delta-up-good",
+    success: "69%",    sucDelta: "▼ 4pts vs prior year",  sucClass: "delta-up-bad",
+    zero:    "14%",    zerDelta: "▲ 2pts vs prior year",  zerClass: "delta-up-bad",
+    abandon: "17%",    abanDelta: "▼ 2pts vs prior year", abanClass: "delta-down-good",
+    funnelTotal: 748600, funnelPct: [100, 86, 69, 46]
   }
 };
 
@@ -1050,49 +1052,27 @@ function renderKPIs() {
   const sel = filters.specialty;
 
   if (sel === "All Specialties") {
-    // Full network view
-    document.getElementById('kpi-volume').innerHTML         = d.volume;
-    document.getElementById('kpi-volume-delta').innerHTML   = d.volDelta;
-    document.getElementById('kpi-volume-delta').className   = 'kpi-delta ' + d.volClass;
-
-    document.getElementById('kpi-success').innerHTML        = d.success;
-    document.getElementById('kpi-success-delta').innerHTML  = d.sucDelta;
-    document.getElementById('kpi-success-delta').className  = 'kpi-delta ' + d.sucClass;
-
-    document.getElementById('kpi-zero').innerHTML           = d.zero;
-    document.getElementById('kpi-zero-delta').innerHTML     = d.zerDelta;
-    document.getElementById('kpi-zero-delta').className     = 'kpi-delta ' + d.zerClass;
-
-    document.getElementById('kpi-abandon').innerHTML        = d.abandon;
-    document.getElementById('kpi-abandon-delta').innerHTML  = d.abanDelta;
-    document.getElementById('kpi-abandon-delta').className  = 'kpi-delta ' + d.abanClass;
+    setKPI('kpi-volume',  'kpi-volume-delta',  d.volume,  d.volDelta,  d.volClass);
+    setKPI('kpi-success', 'kpi-success-delta', d.success, d.sucDelta,  d.sucClass);
+    setKPI('kpi-zero',    'kpi-zero-delta',    d.zero,    d.zerDelta,  d.zerClass);
+    setKPI('kpi-abandon', 'kpi-abandon-delta', d.abandon, d.abanDelta, d.abanClass);
   } else {
-    // Specialty-specific view
-    const sp      = SPECIALTY_STATS[sel];
-    const baseVol = parseInt(d.funnelTotal);
-    const specVol = Math.round(baseVol * sp.share).toLocaleString();
+    const sp  = SPECIALTY_STATS[sel];
+    const vol = Math.round(d.funnelTotal * sp.share).toLocaleString();
 
-    document.getElementById('kpi-volume').innerHTML         = specVol;
-    document.getElementById('kpi-volume-delta').innerHTML   = sel + ' &middot; ' + d.volDelta.replace(/&#9650; |&#9660; /, '');
-    document.getElementById('kpi-volume-delta').className   = 'kpi-delta delta-neutral';
+    setKPI('kpi-volume', 'kpi-volume-delta', vol, sel + ' · filtered view', 'delta-neutral');
 
-    document.getElementById('kpi-success').innerHTML        = sp.success + '%';
-    const sucClass = sp.success >= 65 ? 'delta-down-good' : sp.success >= 45 ? 'delta-neutral' : 'delta-up-bad';
-    const sucVsAvg = sp.success >= 65 ? '&#9650; above avg (62%)' : sp.success >= 45 ? '&#8212; near avg (62%)' : '&#9660; below avg (62%)';
-    document.getElementById('kpi-success-delta').innerHTML  = sucVsAvg;
-    document.getElementById('kpi-success-delta').className  = 'kpi-delta ' + sucClass;
+    var sucCls = sp.success >= 65 ? 'delta-up-good' : sp.success >= 45 ? 'delta-neutral' : 'delta-up-bad';
+    var sucTxt = (sp.success >= 65 ? '▲' : sp.success >= 45 ? '—' : '▼') + ' vs 62% avg';
+    setKPI('kpi-success', 'kpi-success-delta', sp.success + '%', sucTxt, sucCls);
 
-    document.getElementById('kpi-zero').innerHTML           = sp.zero + '%';
-    const zerClass = sp.zero >= 25 ? 'delta-up-bad' : sp.zero <= 12 ? 'delta-down-good' : 'delta-neutral';
-    const zerVsAvg = sp.zero >= 25 ? '&#9650; above avg (18%)' : sp.zero <= 12 ? '&#9660; below avg (18%)' : '&#8212; near avg (18%)';
-    document.getElementById('kpi-zero-delta').innerHTML     = zerVsAvg;
-    document.getElementById('kpi-zero-delta').className     = 'kpi-delta ' + zerClass;
+    var zerCls = sp.zero >= 25 ? 'delta-up-bad' : sp.zero <= 12 ? 'delta-down-good' : 'delta-neutral';
+    var zerTxt = (sp.zero >= 25 ? '▲' : sp.zero <= 12 ? '▼' : '—') + ' vs 18% avg';
+    setKPI('kpi-zero', 'kpi-zero-delta', sp.zero + '%', zerTxt, zerCls);
 
-    document.getElementById('kpi-abandon').innerHTML        = sp.abandon + '%';
-    const abanClass = sp.abandon >= 35 ? 'delta-up-bad' : sp.abandon <= 15 ? 'delta-down-good' : 'delta-neutral';
-    const abanVsAvg = sp.abandon >= 35 ? '&#9650; above avg (20%)' : sp.abandon <= 15 ? '&#9660; below avg (20%)' : '&#8212; near avg (20%)';
-    document.getElementById('kpi-abandon-delta').innerHTML  = abanVsAvg;
-    document.getElementById('kpi-abandon-delta').className  = 'kpi-delta ' + abanClass;
+    var abanCls = sp.abandon >= 35 ? 'delta-up-bad' : sp.abandon <= 15 ? 'delta-down-good' : 'delta-neutral';
+    var abanTxt = (sp.abandon >= 35 ? '▲' : sp.abandon <= 15 ? '▼' : '—') + ' vs 20% avg';
+    setKPI('kpi-abandon', 'kpi-abandon-delta', sp.abandon + '%', abanTxt, abanCls);
   }
 }
 
@@ -1102,25 +1082,25 @@ function renderFunnel() {
   const colors = ['#3b82f6', '#6366f1', '#8b5cf6', '#10b981'];
   const ids    = ['funnel-searches', 'funnel-results', 'funnel-clicked', 'funnel-booked'];
 
-  let total, pcts;
+  var total, pcts;
   if (sel === "All Specialties") {
     total = d.funnelTotal;
     pcts  = d.funnelPct;
   } else {
-    const sp = SPECIALTY_STATS[sel];
-    total    = Math.round(d.funnelTotal * sp.share);
-    pcts     = SPECIALTY_FUNNEL[sel];
+    var sp = SPECIALTY_STATS[sel];
+    total  = Math.round(d.funnelTotal * sp.share);
+    pcts   = SPECIALTY_FUNNEL[sel];
   }
 
-  ids.forEach((id, i) => {
-    const el  = document.getElementById(id);
-    const bar = el.querySelector('.funnel-bar');
-    const pct = el.querySelector('.funnel-pct');
-    const count = Math.round(total * pcts[i] / 100);
+  ids.forEach(function(id, i) {
+    var step  = document.getElementById(id);
+    var bar   = step.querySelector('.funnel-bar');
+    var pctEl = step.querySelector('.funnel-pct');
+    var count = Math.round(total * pcts[i] / 100);
     bar.style.width      = pcts[i] + '%';
     bar.style.background = colors[i];
     bar.textContent      = count.toLocaleString();
-    pct.textContent      = pcts[i] + '%';
+    pctEl.textContent    = pcts[i] + '%';
   });
 }
 
